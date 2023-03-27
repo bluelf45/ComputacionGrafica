@@ -1,0 +1,5 @@
+TO DO:
+    Crear funcion para manipulacion de triangulos.
+    Unir 2 triangulos para crear un cuadrado mas movible.
+    Crear 3 cuadrados para funcionamiento.
+    
