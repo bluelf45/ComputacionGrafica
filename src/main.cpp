@@ -1,5 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <stb/stb_image.h>
+
 #include <iostream>
 //Posiciones iniciales del cuadrado
 float Square_X[3][4] = {
@@ -13,12 +15,17 @@ float Square_Y[3][4] = {
                         {0.8f, 0.8f, 0.2f, 0.2f},
                         {0.4f, 0.4f, -0.4f, -0.4f}
                         };
+//Dimensiones de la pantalla
+int window_width = 800;
+int window_height = 600;
+//Imagen de prueba
+int width, height, num_channels;
+unsigned char* image_data = stbi_load("patricio.png", &width, &height, &num_channels, 0);
+
+
 //Variables para saber que punto y de que cuadrado mover
 int square_to_move = -1;
 int point_to_move = -1;
-
-int window_width = 800;
-int window_height = 600;
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
@@ -35,7 +42,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             for (int i = 0; i < 4; i++) {
                 float dx = Square_X[j][i] - window_x;
                 float dy = Square_Y[j][i] - window_y;
-                if (dx * dx + dy * dy < 0.01f) {
+                if (dx * dx + dy * dy < 0.001f) {
                     point_to_move = i;
                     square_to_move = j;
                     break;
