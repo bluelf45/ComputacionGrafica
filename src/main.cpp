@@ -13,25 +13,16 @@ const float RGB[3][3] = {
 bool WindowFlag = true;
 
 //Posiciones iniciales del cuadrado
-float X1 = -0.5f;
-float X2 = 0.0f;
-float X3 = 0.5f;
-float X4 = 0.0f;
-
-float Y1 = 0.5f;
-float Y2 = 0.34f;
-float Y3 = 0.5f;
-float Y4 = 0.0f;
 float Square_X[3][4] = {
-                        {X1, X2, X4, -0.5},
-                        {X3, X2, X4, 0.5f},
-                        {X1, X2, X3, 0.0f}
+                        {-0.5f, 0.0f, 0.0f, -0.5},
+                        {0.5f, 0.0f, 0.0f, 0.5f},
+                        {-0.5f, 0.0f, 0.5f, 0.0f}
                         };
 
 float Square_Y[3][4] = { 
-                        {Y1, Y2, Y4, 0.15f},
-                        {Y3, Y2, Y4, 0.15f},
-                        {Y1, Y2, Y3, 0.6f}
+                        { 0.5f, 0.34f, 0.0f, 0.15f},
+                        {0.5f, 0.34f, 0.0f, 0.15f},
+                        { 0.5f, 0.34f, 0.5f, 0.6f}
                         };
 float Colores[3][3] = {
     {1.0f, 0.0f, 0.0f},   // Rojo
