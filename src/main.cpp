@@ -2,6 +2,11 @@
 #include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
 #include <iostream>
+#include <algorithm>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include <chrono>
+#include <thread>
 
 //Constantes
 const float RGB[3][3] = {
@@ -9,8 +14,12 @@ const float RGB[3][3] = {
     {0.0f, 1.0f, 0.0f},   // Verde
     {0.0f, 0.0f, 1.0f}    // Azul
 };
-#define SPEED 0.01
+// Variables de textura
+GLuint textureID;
+int textureWidth, textureHeight, textureChannels;
+int j = 1;
 bool WindowFlag = true;
+bool Textura = true;
 
 //Posiciones iniciales del cuadrado
 float Square_X[3][4] = {
@@ -184,111 +193,139 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 //Keyboard Functions
-void readKeyboard(GLFWwindow* window, float *x, float *y){
+void readKeyboard(GLFWwindow* window){
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         WindowFlag = false;
     }
-    if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
-        *y += SPEED;
-    }
-    if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
-        *y -= SPEED;
+    if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS){
+        Textura = true;
+        j = 0;
     }
     if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
-        *x -= SPEED;
+        Textura = false;
+        j = 1;
     }
-    if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
-        *x += SPEED;
+    if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+        Textura = false;
+        j = 2;
     }
-}
-void Show_Quad(int i){
-    glColor3f(Colores[i][0], Colores[i][1], Colores[i][2]);
-
-    glVertex2f(Square_X[i][0], Square_Y[i][0]);
-    glVertex2f(Square_X[i][1], Square_Y[i][1]);
-    glVertex2f(Square_X[i][2], Square_Y[i][2]);
-    glVertex2f(Square_X[i][3], Square_Y[i][3]);
-}
-
-void ShowMobile(float* mobilex, float*mobiley){
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glVertex2f(mobilex[0], mobiley[0]);
-    glVertex2f(mobilex[1], mobiley[1]);
-    glVertex2f(mobilex[2], mobiley[2]);
-    glVertex2f(mobilex[3], mobiley[3]);
-}
-void ModifyMobile(float* mobilex, float*mobiley, float x, float y){
-    // 0->top left|1-> top right|2-> bottom right| 3-> bottom left
-    if(mobilex[0]>= -1.0f || mobilex[3]>= -1.0f){
-        mobilex[0]+=x;
-        mobilex[1]+=x;
-        mobilex[2]+=x;
-        mobilex[3]+=x;
-        mobiley[0]+=y;
-        mobiley[1]+=y;
-        mobiley[2]+=y;
-        mobiley[3]+=y;
-    }else{
-        mobilex[0] = -0.99f;
-        mobilex[3] = -0.99f;
+    if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+        Textura = false;
+        j=3;
     }
 }
+void Show_Quad(int i, int j)
+{
+    if (Textura) {
+        // Activa el uso de textura
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        // Dibuja el cuadrado con coordenadas de textura
+        glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(Square_X[i][0], Square_Y[i][0]);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(Square_X[i][1], Square_Y[i][1]);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(Square_X[i][2], Square_Y[i][2]);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(Square_X[i][3], Square_Y[i][3]);
+        glEnd();
+    } else {
+        // Utilizar color
+        glColor3f(Colores[i][0], Colores[i][1],Colores[i][2]);
+        glBegin(GL_QUADS);
+        glVertex2f(Square_X[i][0], Square_Y[i][0]);
+        glVertex2f(Square_X[i][1], Square_Y[i][1]);
+        glVertex2f(Square_X[i][2], Square_Y[i][2]);
+        glVertex2f(Square_X[i][3], Square_Y[i][3]);
+        glEnd();
+    }
+}
 
-//Main Loop
-int main() {
+
+// Función para cargar la imagen como textura
+void LoadTexture(const char* imagePath)
+{
+    // Cargar imagen de textura
+    unsigned char* image = stbi_load(imagePath, &textureWidth, &textureHeight, &textureChannels, 0);
+    if (!image)
+    {
+        std::cout << "Failed to load texture image: " << imagePath << std::endl;
+        return;
+    }
+
+    // Generar y vincular una textura
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    // Configurar parámetros de textura
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Cargar los datos de imagen en la textura
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+    // Liberar la memoria de la imagen
+    stbi_image_free(image);
+}
+
+
+int main()
+{
     glfwInit();
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    window_width=mode->width;
-    window_height=mode->height;
-    GLFWwindow* window = glfwCreateWindow(window_width, window_height, "Mati is kinda Cringe ngl!!!!", glfwGetPrimaryMonitor(), NULL);
+    window_width = mode->width;
+    window_height = mode->height;
+    GLFWwindow* window = glfwCreateWindow(window_width, window_height, "Proyecto Grafica", glfwGetPrimaryMonitor(), NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
-        return -1;
+        exit(-1);
     }
- 
+
     glfwMakeContextCurrent(window);
- 
+
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
+        exit(-1);
     }
-    //While principal
-    //Activo mientras la ventana este activa
-    float x_dir = 0.0f;
-    float y_dir = 0.0f;
-    // 0->top right|1-> top left|2-> bottom left| 3-> bottom right 
-    float mobilex[4] = {-0.2f, 0.2f, 0.2f, -0.2f};
-    float mobiley[4] = {0.2f, 0.2f, -0.2f, -0.2f};
+
+    // Configurar viewport
+    glViewport(0, 0, window_width, window_height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    // Cargar textura
+    LoadTexture("img/monaks.jpg");
+    //LoadTexture("img/red.jpg", 1);
+    //LoadTexture("img/green.jpg", 2);
+    //LoadTexture("img/blue.jpg", 3);
     while (WindowFlag) {
-        // READ MOUSE 
-        // Conseguir que punto de que poligono conseguir
+        // ...
+        glClear(GL_COLOR_BUFFER_BIT);
         glfwSetMouseButtonCallback(window, mouse_button_callback);
         // Actualizar la posicion de los poligonos
         glfwSetCursorPosCallback(window, cursor_position_callback);
         
         //READ KEYBOARD
-        readKeyboard(window, &x_dir, &y_dir);
-        //MOVE SMOL SQUARE
-        //ModifyMobile(mobilex, mobiley, x_dir, y_dir);
-        glClear(GL_COLOR_BUFFER_BIT);
-        //Show Polygons on screen
-        glBegin(GL_QUADS);
-        //ShowMobile(mobilex, mobiley);
-        Show_Quad(0);
-        Show_Quad(1);
-        Show_Quad(2);
-        glEnd();
-        /* Swap front and back buffers */
-        glfwSwapBuffers(window);
+        readKeyboard(window);
+        // Dibujar las caras del cubo
+        for (int i = 0; i < 3; i++) {
+            Show_Quad(i, j);    
+        }
 
-        /* Poll for and process events */
+
+        glfwSwapBuffers(window);
         glfwPollEvents();
-        x_dir = 0.0f;
-        y_dir = 0.0f;
     }
- 
+
     glfwTerminate();
     return 0;
 }
